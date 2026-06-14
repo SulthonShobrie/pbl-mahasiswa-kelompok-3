@@ -22,11 +22,14 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     // Tarik data profil dari Provider untuk mengisi nilai awal TextField
     final profile = context.read<StudentProvider>().profile;
     _namaCtrl = TextEditingController(text: profile?.nama ?? "");
-    _emailCtrl = TextEditingController(text: profile?.email ?? "");
-    _hpCtrl = TextEditingController(text: "081234567890"); // Simulasi API
+
+    // Gunakan simulasi teks manual karena email tidak ada di StudentProfile
+    _emailCtrl = TextEditingController(text: "mahasiswa@kampus.ac.id");
+
+    _hpCtrl = TextEditingController(text: "081234567890"); // Simulasi
     _alamatCtrl = TextEditingController(
       text: "Jl. Kayu Tangi, Banjarmasin",
-    ); // Simulasi API
+    ); // Simulasi
   }
 
   @override

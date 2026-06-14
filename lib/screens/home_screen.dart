@@ -5,6 +5,7 @@ import '../providers/student_provider.dart';
 import 'khs_screen.dart';
 import 'krs_screen.dart';
 import 'notification_screen.dart';
+import 'presensi_scan_qr_screen.dart'; // Import halaman scanner asli
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -105,7 +106,16 @@ class HomeScreen extends StatelessWidget {
                         Icons.qr_code_scanner_rounded,
                         "Presensi",
                         Colors.orange,
-                        () => _showQRModal(context),
+                        () {
+                          // Navigasi ke Halaman Kamera Scanner Presensi
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) =>
+                                  const PresensiScanQrScreen(),
+                            ),
+                          );
+                        },
                       ),
                       _buildMenuButton(
                         context,
@@ -211,89 +221,6 @@ class HomeScreen extends StatelessWidget {
           Text(
             label,
             style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // Desain Dialog Skenario QR Valid/Tidak Valid dari figma
-  void _showQRModal(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) {
-        return Padding(
-          padding: const EdgeInsets.all(25),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Text(
-                "Scan Presensi QR Kuliah",
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
-              ),
-              const SizedBox(height: 20),
-              ElevatedButton.icon(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF1E3A8A),
-                  minimumSize: const Size(double.infinity, 50),
-                ),
-                icon: const Icon(Icons.camera_alt, color: Colors.white),
-                label: const Text(
-                  "Simulasi Scan QR Sukses",
-                  style: TextStyle(color: Colors.white),
-                ),
-                onPressed: () async {
-                  Navigator.pop(context);
-                  final res = await context
-                      .read<StudentProvider>()
-                      .prosesPresensi("VALID_PRESENSI_2026");
-                  _showResultDialog(context, res);
-                },
-              ),
-              const SizedBox(height: 10),
-              OutlinedButton(
-                style: OutlinedButton.styleFrom(
-                  minimumSize: const Size(double.infinity, 50),
-                ),
-                child: const Text("Simulasi Scan QR Gagal"),
-                onPressed: () async {
-                  Navigator.pop(context);
-                  final res = await context
-                      .read<StudentProvider>()
-                      .prosesPresensi("QR_EXPIRED_OR_INVALID");
-                  _showResultDialog(context, res);
-                },
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-  void _showResultDialog(BuildContext context, bool isSuccess) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        icon: Icon(
-          isSuccess ? Icons.check_circle_rounded : Icons.cancel_rounded,
-          color: isSuccess ? Colors.green : Colors.red,
-          size: 50,
-        ),
-        title: Text(isSuccess ? "Presensi Berhasil" : "Presensi Tidak Valid"),
-        content: Text(
-          isSuccess
-              ? "Kehadiran Anda berhasil tercatat ke dalam server perkuliahan."
-              : "Kode QR tidak dikenali atau masa berlaku absen sesi ini telah berakhir.",
-          textAlign: TextAlign.center,
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text("OK"),
           ),
         ],
       ),

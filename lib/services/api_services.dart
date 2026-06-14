@@ -1,81 +1,75 @@
 // lib/services/api_service.dart
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import '../models/student_models.dart';
 
 class ApiService {
-  // Simulasi hit API Fetch Profil Mahasiswa
+  // Membaca Base URL API Kelompok 3 (Mahasiswa) dari file .env
+  final String baseUrl =
+      dotenv.env['API_KELOMPOK_3'] ??
+      'https://api-mahasiswa-4a.akufarish.my.id:8874';
+
+  // Headers standar untuk JSON API
+  Map<String, String> get _headers => {
+    'Content-Type': 'application/json',
+    'Accept': 'application/json',
+  };
+
+  // 1. HIT API - Profil Mahasiswa (Sesuai Figma Akun Profil)
   Future<StudentProfile> getProfile() async {
-    await Future.delayed(const Duration(milliseconds: 800)); // Network delay
-    return StudentProfile(
-      nim: "2201082014",
-      nama: "Rian Hidayat",
-      prodi: "Teknik Informatika",
-    );
-  }
+    final url = Uri.parse('$baseUrl/api/mahasiswa/profile');
 
-  // Simulasi hit API Fetch Kelas Kuliah Aktif
-  Future<List<KelasKuliah>> getKelasAktif() async {
-    await Future.delayed(const Duration(milliseconds: 1000));
-    return [
-      KelasKuliah(
-        kode: "IF-302",
-        namaMataKuliah: "Pemrograman Mobile (Flutter)",
-        SKS: 3, // Diubah menjadi int agar match dengan model
-        dosenPengampu: "Dr. Eng. Hermawan, M.T.",
-        temanSekelas: [
-          "Ahmad Fauzi",
-          "Siti Aminah",
-          "Budi Utomo",
-          "Clara Shinta",
-          "Dedi Kurniawan",
-        ],
-        sesiList: [
-          SesiKuliah(
-            // Diubah dari SesiPertemuan ke SesiKuliah
-            pertemuanKe: 1,
-            topik: "Pengenalan Widget & Arsitektur Flutter",
-            tanggal: "12 Juni 2026",
-            isHadir: true,
-            daftarMateri: [
-              Materi(
-                judul: "Slide_Pengenalan_Flutter.pdf",
-                tipeFile: "PDF",
-                ukuran: "4.2 MB",
-              ),
-              Materi(
-                judul: "Source_Code_Pertemuan_1.zip",
-                tipeFile: "ZIP",
-                ukuran: "12.5 MB",
-              ),
-            ],
-          ),
-          SesiKuliah(
-            // Diubah dari SesiPertemuan ke SesiKuliah
-            pertemuanKe: 2,
-            topik: "State Management menggunakan Provider",
-            tanggal: "19 Juni 2026",
-            isHadir: true,
-            daftarMateri: [], // Menguji kondisi empty state materi sesuai figma
-          ),
-        ],
-      ),
-      KelasKuliah(
-        kode: "IF-305",
-        namaMataKuliah: "Basis Data Terdistribusi",
-        SKS: 4, // Diubah menjadi int
-        dosenPengampu: "Fitriani, S.Kom., M.Kom.",
-        temanSekelas: ["Ahmad Fauzi", "Budi Utomo", "Dedi Kurniawan"],
-        sesiList: [],
-      ),
-    ];
-  }
+    try {
+      final response = await http.get(url, headers: _headers);
 
-  // Simulasi Validasi QR Absen Kuliah
-  Future<bool> validateQRPresensi(String qrCode) async {
-    await Future.delayed(const Duration(seconds: 1));
-    // Validasi kode QR dinamis sesuai petunjuk figma
-    if (qrCode.contains("VALID_PRESENSI_2026")) {
-      return true;
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> data = json.decode(response.body);
+        return StudentProfile.fromJson(data);
+      } else {
+        throw Exception('Gagal memuat profil: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('Kesalahan koneksi API Profil: $e');
     }
-    return false;
+  }
+
+  // 2. HIT API - Daftar Kelas & Sesi Kuliah (Sesuai Figma Kelas, Sesi & Materi)
+  Future<List<KelasKuliah>> getKelasAktif() async {
+    final url = Uri.parse('$baseUrl/api/mahasiswa/kelas');
+
+    try {
+      final response = await http.get(url, headers: _headers);
+
+      if (response.statusCode == 200) {
+        final List<dynamic> data = json.decode(response.body);
+        return data.map((json) => KelasKuliah.fromJson(json)).toList();
+      } else {
+        throw Exception('Gagal memuat daftar kelas: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('Kesalahan koneksi API Kelas: $e');
+    }
+  }
+
+  // 3. HIT API - Validasi Scan QR Presensi (Sesuai Figma Presensi Scan QR & Warning QR)
+  Future<bool> validateQRPresensi(String qrCode) async {
+    final url = Uri.parse('$baseUrl/api/mahasiswa/presensi');
+
+    try {
+      final response = await http.post(
+        url,
+        headers: _headers,
+        body: jsonEncode({'qr_code_token': qrCode}),
+      );
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> result = json.decode(response.body);
+        return result['status'] == true || result['success'] == true;
+      }
+      return false;
+    } catch (e) {
+      return false;
+    }
   }
 }

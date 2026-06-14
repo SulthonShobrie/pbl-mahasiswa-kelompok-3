@@ -1,113 +1,62 @@
 // lib/providers/student_provider.dart
 import 'package:flutter/material.dart';
 import '../models/student_models.dart';
+import '../services/api_services.dart'; // <--- Sudah disesuaikan menjadi 'service' tanpa 's'
 
 class StudentProvider extends ChangeNotifier {
+  final ApiService _apiService = ApiService();
+
   bool _isLoading = true;
+  String? _errorMessage;
   StudentProfile? _profile;
   List<KelasKuliah> _daftarKelas = [];
 
   bool get isLoading => _isLoading;
+  String? get errorMessage => _errorMessage;
   StudentProfile? get profile => _profile;
   List<KelasKuliah> get daftarKelas => _daftarKelas;
 
   StudentProvider() {
-    _loadDataDataAkademik();
+    fetchDataAkademik();
   }
 
-  Future<void> _loadDataDataAkademik() async {
-    // Simulasi penarikan data awal dari server/Figma skenario
-    await Future.delayed(const Duration(seconds: 1));
-
-    _profile = StudentProfile(
-      nama: "Rian Aditya",
-      nim: "2201010145",
-      prodi: "Teknik Informatika",
-    );
-
-    _daftarKelas = [
-      KelasKuliah(
-        kode: "IF-302",
-        namaMataKuliah: "Pemrograman Mobile (Flutter)",
-        SKS: 3,
-        dosenPengampu: "Dr. Eng. Hermawan, M.T.",
-        temanSekelas: [
-          "Ahmad Dhani",
-          "Budi Utomo",
-          "Citra Kirana",
-          "Dedi Corbuzier",
-          "Eka Saputra",
-        ],
-        sesiList: [
-          SesiKuliah(
-            pertemuanKe: 1,
-            tanggal: "Senin, 2 Maret 2026",
-            topik: "Pengenalan Widget & Arsitektur Flutter",
-            isHadir: true,
-            daftarMateri: [
-              Materi(
-                judul: "Slide Pendahuluan Flutter.pdf",
-                tipeFile: "PDF",
-                ukuran: "2.4 MB",
-              ),
-              Materi(
-                judul: "Modul Praktikum 1.pdf",
-                tipeFile: "PDF",
-                ukuran: "1.1 MB",
-              ),
-            ],
-          ),
-          SesiKuliah(
-            pertemuanKe: 2,
-            tanggal: "Senin, 9 Maret 2026",
-            topik: "State Management dengan Provider",
-            isHadir: true,
-            daftarMateri: [], // Menguji skenario materi kosong dari Figma
-          ),
-        ],
-      ),
-      KelasKuliah(
-        kode: "IF-305",
-        namaMataKuliah: "Basis Data Terdistribusi",
-        SKS: 4,
-        dosenPengampu: "Fitriani, S.Kom., M.Kom.",
-        temanSekelas: ["Fany Arianti", "Gita Gutawa", "Hendra Setiawan"],
-        sesiList: [
-          SesiKuliah(
-            pertemuanKe: 1,
-            tanggal: "Senin, 2 Maret 2026",
-            topik: "Konsep Dasar Desentralisasi Data",
-            isHadir: true,
-            daftarMateri: [
-              Materi(
-                judul: "Buku Referensi Distributed DB.pdf",
-                tipeFile: "PDF",
-                ukuran: "14.5 MB",
-              ),
-            ],
-          ),
-        ],
-      ),
-    ];
-
-    _isLoading = false;
+  // Menarik data nyata dari server backend
+  Future<void> fetchDataAkademik() async {
+    _isLoading = true;
+    _errorMessage = null;
     notifyListeners();
+
+    try {
+      // Menjalankan request API
+      final profileData = await _apiService.getProfile();
+      final kelasData = await _apiService.getKelasAktif();
+
+      _profile = profileData;
+      _daftarKelas = kelasData;
+    } catch (e) {
+      _errorMessage = e.toString();
+      debugPrint("Error fetching API: $e");
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
   }
 
-  // Simulasi cek validitas QR Code Presensi
+  // Proses validasi scan QR presensi kuliah langsung ke server API
   Future<bool> prosesPresensi(String qrCode) async {
     _isLoading = true;
     notifyListeners();
 
-    await Future.delayed(const Duration(milliseconds: 600));
-
-    _isLoading = false;
-    notifyListeners();
-
-    if (qrCode == "VALID_PRESENSI_2026") {
-      return true;
-    } else {
-      return false;
+    bool isSuccess = false;
+    try {
+      isSuccess = await _apiService.validateQRPresensi(qrCode);
+    } catch (e) {
+      debugPrint("Error presensi API: $e");
+    } finally {
+      _isLoading = false;
+      notifyListeners();
     }
+
+    return isSuccess;
   }
 }

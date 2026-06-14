@@ -1,10 +1,15 @@
 // lib/main.dart
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:provider/provider.dart';
 import 'providers/student_provider.dart';
 import 'screens/main_navigation_screen.dart';
 
-void main() {
+Future<void> main() async {
+  // Baris ini wajib ada jika menggunakan .env sebelum runApp dipanggil
+  WidgetsFlutterBinding.ensureInitialized();
+  await dotenv.load(fileName: ".env");
+
   runApp(const MyApp());
 }
 
